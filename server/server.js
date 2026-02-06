@@ -4,11 +4,15 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const testRoutes = require("./routes/testRoutes");
 const app = express();
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 // middleware
 app.use(cors());
 app.use(express.json());
 app.use("/api", testRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 
 // MongoDB connection
 mongoose
