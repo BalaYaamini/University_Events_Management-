@@ -1,11 +1,13 @@
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
@@ -15,12 +17,10 @@ function Login() {
       );
 
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.role);
+      localStorage.setItem("role", res.data.user.role);
 
-      if (res.data.role === "admin") {
-        window.location.href = "/admin";
-      } else {
-        alert("Student login successful");
+      if (res.data.user.role === "admin") {
+        navigate("/admin");
       }
     } catch (err) {
       alert("Invalid credentials");
@@ -28,26 +28,28 @@ function Login() {
   };
 
   return (
-    <div className="container mt-5">
+    <div>
       <h2>Login</h2>
-
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleLogin}>
         <input
-          className="form-control mb-3"
+          type="email"
           placeholder="Email"
+          value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
+        <br />
 
         <input
           type="password"
-          className="form-control mb-3"
           placeholder="Password"
+          value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
+        <br />
 
-        <button className="btn btn-primary w-100">
-          Login
-        </button>
+        <button type="submit">Login</button>
       </form>
     </div>
   );
