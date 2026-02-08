@@ -1,10 +1,12 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-function Login() {
+const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -16,20 +18,27 @@ function Login() {
         { email, password }
       );
 
+      // SAVE TOKEN
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.user.role);
+      localStorage.setItem("role", res.data.role);
 
-      if (res.data.user.role === "admin") {
+      // REDIRECT
+      if (res.data.role === "admin") {
         navigate("/admin");
+      } else {
+        navigate("/login");
       }
     } catch (err) {
-      alert("Invalid credentials");
+      setError("Invalid credentials");
     }
   };
 
   return (
-    <div>
+    <div style={{ padding: "40px" }}>
       <h2>Login</h2>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
       <form onSubmit={handleLogin}>
         <input
           type="email"
@@ -38,7 +47,7 @@ function Login() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <br />
+        <br /><br />
 
         <input
           type="password"
@@ -47,12 +56,12 @@ function Login() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <br />
+        <br /><br />
 
         <button type="submit">Login</button>
       </form>
     </div>
   );
-}
+};
 
 export default Login;
