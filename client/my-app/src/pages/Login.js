@@ -1,67 +1,78 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const Login = () => {
+function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        { email, password }
-      );
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // SAVE TOKEN
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.role);
+      const data = await response.json();
 
-      // REDIRECT
-      if (res.data.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/login");
+      if (!response.ok) {
+        alert(data.message || "Invalid credentials");
+        return;
       }
-    } catch (err) {
-      setError("Invalid credentials");
+
+      alert("Login successful");
+      navigate("/dashboard");
+      // later: navigate to dashboard
+    } catch (error) {
+      alert("Backend server not reachable");
     }
   };
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h2>Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-6">
+          Admin Login
+        </h2>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-gray-600 mb-1">Email</label>
+            <input
+              type="email"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <br /><br />
+          <div className="mb-6">
+            <label className="block text-gray-600 mb-1">Password</label>
+            <input
+              type="password"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <br /><br />
-
-        <button type="submit">Login</button>
-      </form>
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          >
+            Login
+          </button>
+        </form>
+      </div>
     </div>
   );
-};
+}
 
 export default Login;
