@@ -4,34 +4,45 @@ import { useNavigate } from "react-router-dom";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
+  const [role, setRole] = useState("student");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const navigate = useNavigate();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        role,
+      }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (!response.ok) {
-        alert(data.message || "Invalid credentials");
-        return;
-      }
-
-      alert("Login successful");
-      navigate("/dashboard");
-      // later: navigate to dashboard
-    } catch (error) {
-      alert("Backend server not reachable");
+    if (!response.ok) {
+      alert(data.message || "Invalid credentials");
+      return;
     }
-  };
+
+    // save role so dashboard stays accessible on refresh
+    localStorage.setItem("role", role);
+
+    // redirect based on selected role
+    if (role === "admin") {
+      navigate("/admin-dashboard");
+    } else {
+      navigate("/student-dashboard");
+    }
+  } catch (error) {
+    alert("Backend server not reachable");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -39,8 +50,36 @@ function Login() {
         <h2 className="text-2xl font-bold text-center mb-6">
           Admin Login
         </h2>
-
+        
         <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+  <label className="block text-gray-600 mb-2 font-medium">
+    Login as
+  </label>
+
+  <div className="flex gap-6">
+    <label className="flex items-center gap-2">
+      <input
+        type="radio"
+        value="student"
+        checked={role === "student"}
+        onChange={() => setRole("student")}
+      />
+      Student
+    </label>
+
+    <label className="flex items-center gap-2">
+      <input
+        type="radio"
+        value="admin"
+        checked={role === "admin"}
+        onChange={() => setRole("admin")}
+      />
+      Admin
+    </label>
+  </div>
+</div>
+
           <div className="mb-4">
             <label className="block text-gray-600 mb-1">Email</label>
             <input
