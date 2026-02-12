@@ -108,6 +108,16 @@ const handleSubmit = async (e) => {
           >
             Login
           </button>
+          <p className="text-sm text-center mt-4">
+  Don't have an account?{" "}
+  <span
+    className="text-blue-600 cursor-pointer"
+    onClick={() => navigate("/register")}
+  >
+    Create one
+  </span>
+</p>
+
         </form>
       </div>
     </div>
