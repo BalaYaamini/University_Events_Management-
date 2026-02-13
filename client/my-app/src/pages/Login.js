@@ -10,6 +10,12 @@ const navigate = useNavigate();
 const handleSubmit = async (e) => {
   e.preventDefault();
 
+  // ✅ Frontend validation
+  if (!email || !password || !role) {
+    alert("All fields are required");
+    return;
+  }
+
   try {
     const response = await fetch("http://localhost:5000/api/auth/login", {
       method: "POST",
@@ -26,21 +32,25 @@ const handleSubmit = async (e) => {
     const data = await response.json();
 
     if (!response.ok) {
-      alert(data.message || "Invalid credentials");
+      alert(data.message); // 🔥 Shows backend message
       return;
     }
 
-    // save role so dashboard stays accessible on refresh
-    localStorage.setItem("role", role);
+    // ✅ Save token
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role);
 
-    // redirect based on selected role
-    if (role === "admin") {
+    alert("Login successful");
+
+    // Redirect based on role
+    if (data.role === "admin") {
       navigate("/admin-dashboard");
     } else {
       navigate("/student-dashboard");
     }
+
   } catch (error) {
-    alert("Backend server not reachable");
+    alert("Server error");
   }
 };
 

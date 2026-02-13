@@ -10,6 +10,16 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // if (!name || !email || !password || !role) {
+    //   alert("All fields are required");
+    //   return;
+    // }
+
+    // if (password.length < 6) {
+    //   alert("Password must be at least 6 characters");
+    //   return;
+    // }
 
     try {
       const response = await fetch("http://localhost:5000/api/auth/register", {
