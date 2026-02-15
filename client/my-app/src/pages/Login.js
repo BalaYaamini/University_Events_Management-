@@ -1,18 +1,21 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("student");
+const [error, setError] = useState("");
+const [success, setSuccess] = useState("");
 
 const navigate = useNavigate();
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  // ✅ Frontend validation
   if (!email || !password || !role) {
-    alert("All fields are required");
+    setError("All fields are required");
+    setSuccess("");
     return;
   }
 
@@ -32,35 +35,46 @@ const handleSubmit = async (e) => {
     const data = await response.json();
 
     if (!response.ok) {
-      alert(data.message); // 🔥 Shows backend message
+      setError(data.message || "Login failed");
+      setSuccess("");
       return;
     }
 
-    // ✅ Save token
     localStorage.setItem("token", data.token);
     localStorage.setItem("role", data.role);
 
-    alert("Login successful");
+    setSuccess("Login successful!");
+    setError("");
 
-    // Redirect based on role
-    if (data.role === "admin") {
-      navigate("/admin-dashboard");
-    } else {
-      navigate("/student-dashboard");
-    }
+    setTimeout(() => {
+      if (data.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/student-dashboard");
+      }
+    }, 1200);
 
   } catch (error) {
-    alert("Server error");
+    setError("Server error");
+    setSuccess("");
   }
 };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-6">
-          Admin Login
+          Login
         </h2>
-        
+        {error && (
+  <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+)}
+
+{success && (
+  <p className="text-green-600 text-sm mb-4 text-center">{success}</p>
+)}
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
   <label className="block text-gray-600 mb-2 font-medium">

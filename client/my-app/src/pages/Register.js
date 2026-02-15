@@ -1,5 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 
 function Register() {
   const [name, setName] = useState("");
@@ -10,97 +11,113 @@ function Register() {
   const [otpSent, setOtpSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
 
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
   // 1️⃣ SEND OTP
   const sendOTP = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/send-otp",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Failed to send OTP");
-        return;
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/auth/send-otp",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       }
+    );
 
-      alert("OTP sent to your email");
-      setOtpSent(true);
-    } catch (error) {
-      alert("Server error while sending OTP");
-    }
-  };
+    const data = await response.json();
 
-  // 2️⃣ VERIFY OTP
-  const verifyOTP = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/verify-email",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, otp }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Invalid OTP");
-        return;
-      }
-
-      alert("Email verified successfully!");
-      setEmailVerified(true);
-    } catch (error) {
-      alert("Server error while verifying OTP");
-    }
-  };
-
-  // 3️⃣ FINAL REGISTER
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!emailVerified) {
-      alert("Please verify your email first");
+    if (!response.ok) {
+      setError(data.message || "Failed to send OTP");
+      setSuccess("");
       return;
     }
 
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/register",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-            role: "student",
-          }),
-        }
-      );
+    setSuccess("OTP sent to your email");
+    setError("");
+    setOtpSent(true);
+  } catch (error) {
+    setError("Server error while sending OTP");
+    setSuccess("");
+  }
+};
 
-      const data = await response.json();
 
-      if (!response.ok) {
-        alert(data.message || "Registration failed");
-        return;
+  // 2️⃣ VERIFY OTP
+const verifyOTP = async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/auth/verify-email",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
       }
+    );
 
-      alert("Account created successfully!");
-      navigate("/");
-    } catch (error) {
-      alert("Backend server not reachable");
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message || "Invalid OTP");
+      setSuccess("");
+      return;
     }
-  };
+
+    setSuccess("Email verified successfully!");
+    setError("");
+    setEmailVerified(true);
+  } catch (error) {
+    setError("Server error while verifying OTP");
+    setSuccess("");
+  }
+};
+
+  // 3️⃣ FINAL REGISTER
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!emailVerified) {
+    setError("Please verify your email first");
+    setSuccess("");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/auth/register",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          role: "student",
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.message || "Registration failed");
+      setSuccess("");
+      return;
+    }
+
+    setSuccess("Account created successfully!");
+    setError("");
+
+    setTimeout(() => {
+      navigate("/");
+    }, 1500);
+  } catch (error) {
+    setError("Backend server not reachable");
+    setSuccess("");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -119,6 +136,13 @@ function Register() {
           disabled={emailVerified}
           required
         />
+        {error && (
+  <p className="text-red-500 text-sm mb-2">{error}</p>
+)}
+
+{success && (
+  <p className="text-green-600 text-sm mb-2">{success}</p>
+)}
 
         {/* SEND OTP BUTTON */}
         {!otpSent && (
