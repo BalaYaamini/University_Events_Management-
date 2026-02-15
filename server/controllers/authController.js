@@ -3,66 +3,62 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
 const sendOTP = require("../utils/sendOTP"); // make sure you have this
+const otpStore = {};
+const allowedDomain = "@cse.suh.edu.in";
+
+const isValidDomain = (email) => {
+  const parts = email.split("@");
+
+  if (parts.length !== 2) return false;
+
+  const domain = parts[1].toLowerCase();
+
+  return domain === "suh.edu.in" || domain.endsWith(".suh.edu.in");
+};
+
 
 exports.register = async (req, res) => {
   const { name, email, password, role } = req.body;
 
   try {
-    // 1️⃣ Validate fields
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: "All fields are required" });
+    const record = otpStore[email];
+
+    if (!record || !record.verified) {
+      return res.status(400).json({ message: "Please verify email first" });
     }
 
-    const nameRegex = /^[A-Za-z\s]+$/;
-    if (!nameRegex.test(name)) {
-      return res.status(400).json({ message: "Name must contain only letters" });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: "Invalid email format" });
-    }
-
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({ message: "Password must be strong" });
-    }
-
-    // 2️⃣ Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
+if (!isValidDomain(email)) {
+  return res.status(400).json({
+    message: "Only SUH university emails are allowed"
+  });
+}
 
-    // 3️⃣ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 4️⃣ Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
       role,
-      otp,
-      otpExpires: Date.now() + 10 * 60 * 1000, // 10 minutes expiry
-      isVerified: false,
     });
 
     await newUser.save();
 
-    // 5️⃣ Send OTP email
-    await sendOTP(email, otp);
+    // Remove from memory after successful registration
+    delete otpStore[email];
 
-    // 6️⃣ Respond
-    res.status(201).json({ message: "OTP sent to email" });
+    res.status(201).json({ message: "Registration successful" });
 
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 exports.login = async (req, res) => {
@@ -73,6 +69,13 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
+
+    if (!isValidDomain(email)) {
+  return res.status(400).json({
+    message: "Only SUH university emails are allowed"
+  });
+}
+
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -100,31 +103,64 @@ exports.sendOTPForRegister = async (req, res) => {
 
   try {
     const existingUser = await User.findOne({ email });
+
+   if (!isValidDomain(email)) {
+  return res.status(400).json({
+    message: "Only SUH university emails are allowed"
+  });
+}
+
+
     if (existingUser) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Store temporarily (you can use DB or memory for now)
+    otpStore[email] = {
+      otp,
+      expires: Date.now() + 10 * 60 * 1000,
+      verified: false,
+    };
+
     await sendOTP(email, otp);
 
     res.json({ message: "OTP sent to email" });
 
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 
+
 exports.verifyEmailOTP = async (req, res) => {
   const { email, otp } = req.body;
 
-  // compare with stored OTP
-  // if correct:
-  res.json({ message: "Email verified" });
-};
+  try {
+    const record = otpStore[email];
 
+    if (!record) {
+      return res.status(400).json({ message: "No OTP found" });
+    }
+
+    if (record.expires < Date.now()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    record.verified = true;
+
+    res.json({ message: "Email verified successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 
 
